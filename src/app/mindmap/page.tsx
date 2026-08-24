@@ -61,8 +61,12 @@ export default function GraphPage() {
     localStorage.setItem("obsidian_notes", JSON.stringify(updatedNotes));
   };
 
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+
+  const selectedNote = notes.find(n => n.id === selectedNoteId);
+
   return (
-    <div className="flex h-screen bg-[#1e1e1e] flex-col overflow-hidden text-gray-300">
+    <div className="flex h-screen bg-[#1e1e1e] flex-col overflow-hidden text-gray-300 relative">
        <div className="h-12 border-b border-[#333333] flex items-center justify-between px-4 bg-[#252526] shrink-0 z-10 shadow-sm">
          <div className="flex items-center gap-4">
            <button 
@@ -83,11 +87,42 @@ export default function GraphPage() {
            +30 Тест-Нотаток
          </button>
        </div>
-       <div className="flex-1 relative">
-         <MindmapView 
-           notes={notes} 
-           onNodeClick={(id) => router.push(`/?noteId=${id}`)} 
-         />
+       <div className="flex-1 relative flex">
+         {/* Graph Area */}
+         <div className="flex-1 relative">
+           <MindmapView 
+             notes={notes} 
+             onNodeClick={(id) => setSelectedNoteId(id)} 
+           />
+         </div>
+
+         {/* Side Panel for Note Preview */}
+         {selectedNote && (
+           <div className="w-96 bg-[#252526] border-l border-[#333333] flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 animate-in slide-in-from-right-8 duration-300">
+             <div className="p-4 border-b border-[#333333] flex justify-between items-center bg-[#1e1e1e]">
+               <h3 className="font-bold text-white truncate pr-4">{selectedNote.title}</h3>
+               <button 
+                 onClick={() => setSelectedNoteId(null)}
+                 className="text-gray-500 hover:text-white p-1 rounded hover:bg-[#333333] transition-colors"
+               >
+                 ✕
+               </button>
+             </div>
+             <div className="p-6 overflow-y-auto flex-1 prose prose-invert prose-sm max-w-none">
+               <div style={{ whiteSpace: "pre-wrap" }}>
+                 {selectedNote.content || "Ця нотатка порожня."}
+               </div>
+             </div>
+             <div className="p-4 border-t border-[#333333] bg-[#1e1e1e]">
+               <button 
+                 onClick={() => router.push(`/?noteId=${selectedNote.id}`)}
+                 className="w-full bg-[#333333] hover:bg-[#444444] text-white py-2 rounded text-sm font-medium transition-colors"
+               >
+                 Редагувати нотатку
+               </button>
+             </div>
+           </div>
+         )}
        </div>
     </div>
   );
