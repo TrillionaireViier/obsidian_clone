@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -8,6 +8,8 @@ import {
   Background,
   useNodesState,
   useEdgesState,
+  Edge,
+  Node
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -24,39 +26,84 @@ type MindmapViewProps = {
 };
 
 export default function MindmapView({ notes, onNodeClick }: MindmapViewProps) {
-  // Create nodes from notes
-  const initialNodes = useMemo(() => {
-    return notes.map((note, index) => {
-      // Very basic layout algorithm: grid placement
-      const x = (index % 4) * 250 + 100;
-      const y = Math.floor(index / 4) * 150 + 100;
-      
-      return {
-        id: note.id,
-        position: { x, y },
-        data: { label: note.title },
-        style: {
-          background: '#252526',
-          color: '#e2e2e2',
-          border: '1px solid #333333',
-          borderRadius: '8px',
-          padding: '10px 20px',
-          fontWeight: 'bold',
-          cursor: 'pointer'
-        }
-      };
-    });
-  }, [notes]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   useEffect(() => {
-    setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
+    // 1. Generate Nodes
+    setNodes((currentNodes) => {
+      const existingNodesMap = new Map(currentNodes.map(n => [n.id, n]));
+      
+      return notes.map((note) => {
+        // If node already exists, preserve its position but update its label
+        if (existingNodesMap.has(note.id)) {
+          const ex = existingNodesMap.get(note.id)!;
+          return {
+            ...ex,
+            data: { label: note.title }
+          };
+        }
+        
+        // If it's a new node, scatter it randomly within a 2000x2000 circle
+        const radius = 1000 * Math.sqrt(Math.random());
+        const theta = Math.random() * 2 * Math.PI;
+        const x = radius * Math.cos(theta);
+        const y = radius * Math.sin(theta);
+        
+        return {
+          id: note.id,
+          position: { x, y },
+          data: { label: note.title },
+          style: {
+            background: '#252526',
+            color: '#e2e2e2',
+            border: '1px solid #444444',
+            borderRadius: '12px',
+            padding: '12px 24px',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer'
+          }
+        };
+      });
+    });
+
+    // 2. Generate Edges (parse [[Title]] links)
+    const newEdges: Edge[] = [];
+    const edgeSet = new Set<string>();
+
+    notes.forEach((sourceNote) => {
+      // Regex to match [[Anything inside]]
+      const regex = /\[\[(.*?)\]\]/g;
+      let match;
+      
+      while ((match = regex.exec(sourceNote.content)) !== null) {
+        const targetTitle = match[1].trim();
+        const targetNote = notes.find(n => n.title === targetTitle);
+        
+        if (targetNote && targetNote.id !== sourceNote.id) {
+          const edgeId = `e-${sourceNote.id}-${targetNote.id}`;
+          
+          if (!edgeSet.has(edgeId)) {
+            edgeSet.add(edgeId);
+            newEdges.push({
+              id: edgeId,
+              source: sourceNote.id,
+              target: targetNote.id,
+              animated: true, // Cool flowing animation for links
+              style: { stroke: '#7c3aed', strokeWidth: 2, opacity: 0.7 } // Purple glowing links
+            });
+          }
+        }
+      }
+    });
+
+    setEdges(newEdges);
+  }, [notes, setNodes, setEdges]);
 
   return (
-    <div className="w-full h-full" style={{ background: '#1e1e1e' }}>
+    <div className="w-full h-full" style={{ background: '#121212' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -67,8 +114,8 @@ export default function MindmapView({ notes, onNodeClick }: MindmapViewProps) {
         fitView
       >
         <Controls />
-        <MiniMap nodeStrokeColor="#444" nodeColor="#333" maskColor="rgba(0,0,0,0.7)" />
-        <Background color="#333" gap={16} />
+        <MiniMap nodeStrokeColor="#555" nodeColor="#222" maskColor="rgba(0,0,0,0.8)" />
+        <Background color="#333" gap={20} size={1.5} />
       </ReactFlow>
     </div>
   );

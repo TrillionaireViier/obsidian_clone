@@ -94,16 +94,27 @@ export default function ObsidianClone() {
 
   const generateMockNotes = () => {
     const newNotes: Note[] = [];
-    const topics = ["React", "Next.js", "TypeScript", "TailwindCSS", "Node.js", "GraphQL", "Zustand", "Redux", "Vercel", "WebSockets"];
+    const topics = ["React", "Next.js", "TypeScript", "TailwindCSS", "Node.js", "GraphQL", "Zustand", "Redux", "Vercel", "WebSockets", "Prisma", "PostgreSQL", "Docker", "Figma", "Design", "Productivity"];
     
     for (let i = 0; i < 30; i++) {
       const randomTopic = topics[Math.floor(Math.random() * topics.length)];
       newNotes.push({
         id: `mock-${Date.now()}-${i}`,
         title: `Нотатка про ${randomTopic} #${i + 1}`,
-        content: `# ${randomTopic} #${i + 1}\n\nЦе тестова нотатка, згенерована автоматично для перевірки відображення графа (Mindmap).\n\n- Тестовий пункт 1\n- Тестовий пункт 2`,
+        content: `# ${randomTopic} #${i + 1}\n\nЦе тестова нотатка, згенерована автоматично для перевірки відображення графа (Mindmap).\n\n`,
         updatedAt: Date.now() - Math.floor(Math.random() * 10000000),
       });
+    }
+
+    // Add cross-links between mock notes
+    for (let i = 0; i < newNotes.length; i++) {
+      const numLinks = Math.floor(Math.random() * 4) + 1; // 1 to 4 links per note
+      for (let j = 0; j < numLinks; j++) {
+        const targetIndex = Math.floor(Math.random() * newNotes.length);
+        if (targetIndex !== i) {
+          newNotes[i].content += `- Див. також: [[${newNotes[targetIndex].title}]]\n`;
+        }
+      }
     }
     
     setNotes([...newNotes, ...notes]);
