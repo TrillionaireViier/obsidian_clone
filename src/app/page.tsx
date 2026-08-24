@@ -94,14 +94,14 @@ export default function ObsidianClone() {
 
   const generateMockNotes = () => {
     const newNotes: Note[] = [];
-    const topics = ["React", "Next.js", "TypeScript", "TailwindCSS", "Node.js", "GraphQL", "Zustand", "Redux", "Vercel", "WebSockets", "Prisma", "PostgreSQL", "Docker", "Figma", "Design", "Productivity"];
+    const topics = ["Ваврукік"];
     
     for (let i = 0; i < 30; i++) {
       const randomTopic = topics[Math.floor(Math.random() * topics.length)];
       newNotes.push({
         id: `mock-${Date.now()}-${i}`,
         title: `Нотатка про ${randomTopic} #${i + 1}`,
-        content: `# ${randomTopic} #${i + 1}\n\nЦе тестова нотатка, згенерована автоматично для перевірки відображення графа (Mindmap).\n\n`,
+        content: `# ${randomTopic} #${i + 1}\n\nЦе тестова нотатка про Ваврукіка, згенерована автоматично для перевірки відображення графа.\n\n`,
         updatedAt: Date.now() - Math.floor(Math.random() * 10000000),
       });
     }
