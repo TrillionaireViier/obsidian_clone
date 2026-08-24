@@ -117,7 +117,7 @@ export default function ObsidianClone() {
           {/* Sidebar Features */}
           <div className="p-2 border-b border-[#333333]">
             <Link
-              href="/graph"
+              href="/mindmap"
               className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left transition-colors text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300`}
             >
               <Network size={14} className="shrink-0" />
