@@ -74,11 +74,14 @@ export default function MindmapView({ notes, onNodeClick }: MindmapViewProps) {
     const edgeSet = new Set<string>();
 
     notes.forEach((sourceNote) => {
+      // Safely handle empty content
+      const content = sourceNote.content || "";
+      
       // Regex to match [[Anything inside]]
       const regex = /\[\[(.*?)\]\]/g;
       let match;
       
-      while ((match = regex.exec(sourceNote.content)) !== null) {
+      while ((match = regex.exec(content)) !== null) {
         const targetTitle = match[1].trim();
         const targetNote = notes.find(n => n.title === targetTitle);
         
