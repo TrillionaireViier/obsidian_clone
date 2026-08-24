@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { FileText, Plus, Search, Settings, PanelLeftClose, PanelLeft, FolderClosed, Network } from "lucide-react";
 import EditorView from "@/components/EditorView";
-import MindmapView from "@/components/MindmapView";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Note = {
   id: string;
@@ -13,31 +14,40 @@ type Note = {
 };
 
 export default function ObsidianClone() {
+  const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"editor" | "graph">("editor");
 
   // Load notes from LocalStorage on mount
   useEffect(() => {
     const savedNotes = localStorage.getItem("obsidian_notes");
+    let loadedNotes = [];
     if (savedNotes) {
-      const parsedNotes = JSON.parse(savedNotes);
-      setNotes(parsedNotes);
-      if (parsedNotes.length > 0) {
-        setActiveNoteId(parsedNotes[0].id);
-      }
+      loadedNotes = JSON.parse(savedNotes);
+      setNotes(loadedNotes);
     } else {
       // Initialize with a welcome note
       const welcomeNote = {
         id: Date.now().toString(),
         title: "Ласкаво просимо до вашого нового Obsidian Clone!",
-        content: "# Привіт!\nЦе ваш локальний застосунок для нотаток. Всі дані зберігаються прямо у вашому браузері.\n\n## Що можна зробити:\n- Створювати нові нотатки за допомогою кнопки `+`.\n- Натисніть `/` щоб відкрити **Notion** меню та додати блоки (заголовки, списки тощо).\n- Натисніть кнопку **Граф (Mindmap)** зверху, щоб побачити мапу нотаток.\n- Шукати нотатки на боковій панелі.",
+        content: "# Привіт!\nЦе ваш локальний застосунок для нотаток. Всі дані зберігаються прямо у вашому браузері.\n\n## Що можна зробити:\n- Створювати нові нотатки за допомогою кнопки `+`.\n- Натисніть `/` щоб відкрити **Notion** меню та додати блоки (заголовки, списки тощо).\n- Натисніть кнопку **Граф (Mindmap)** зліва, щоб побачити мапу нотаток.\n- Шукати нотатки на боковій панелі.",
         updatedAt: Date.now(),
       };
-      setNotes([welcomeNote]);
-      setActiveNoteId(welcomeNote.id);
+      loadedNotes = [welcomeNote];
+      setNotes(loadedNotes);
+    }
+
+    // Check if there's a noteId in the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlNoteId = searchParams.get('noteId');
+    if (urlNoteId && loadedNotes.some((n: Note) => n.id === urlNoteId)) {
+      setActiveNoteId(urlNoteId);
+      // Clean up URL without reload
+      window.history.replaceState({}, '', '/');
+    } else if (loadedNotes.length > 0) {
+      setActiveNoteId(loadedNotes[0].id);
     }
   }, []);
 
@@ -59,7 +69,6 @@ export default function ObsidianClone() {
     };
     setNotes([newNote, ...notes]);
     setActiveNoteId(newNote.id);
-    setViewMode("editor");
   };
 
   const updateNoteContent = (content: string) => {
@@ -81,11 +90,6 @@ export default function ObsidianClone() {
       }
       return note;
     }));
-  };
-
-  const handleNodeClick = (id: string) => {
-    setActiveNoteId(id);
-    setViewMode("editor");
   };
 
   const filteredNotes = notes.filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -112,15 +116,13 @@ export default function ObsidianClone() {
 
           {/* Sidebar Features */}
           <div className="p-2 border-b border-[#333333]">
-            <button
-              onClick={() => setViewMode("graph")}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left transition-colors ${
-                viewMode === "graph" ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300'
-              }`}
+            <Link
+              href="/graph"
+              className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left transition-colors text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300`}
             >
               <Network size={14} className="shrink-0" />
               <span>Мапа зв'язків (Mindmap)</span>
-            </button>
+            </Link>
           </div>
 
           {/* Search */}
@@ -143,9 +145,9 @@ export default function ObsidianClone() {
             {filteredNotes.map(note => (
               <button
                 key={note.id}
-                onClick={() => { setActiveNoteId(note.id); setViewMode("editor"); }}
+                onClick={() => setActiveNoteId(note.id)}
                 className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left truncate transition-colors ${
-                  activeNoteId === note.id && viewMode === "editor" ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300'
+                  activeNoteId === note.id ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300'
                 }`}
               >
                 <FileText size={14} className="shrink-0" />
@@ -176,27 +178,23 @@ export default function ObsidianClone() {
               {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
             </button>
             <div className="text-sm font-medium text-gray-400 truncate">
-              {viewMode === "editor" ? (activeNote ? activeNote.title : "Виберіть нотатку") : "Мапа зв'язків (Mindmap)"}
+              {activeNote ? activeNote.title : "Виберіть нотатку"}
             </div>
           </div>
         </div>
 
         {/* Dynamic Area (Editor or Mindmap) */}
         <div className="flex-1 overflow-y-auto relative">
-          {viewMode === "graph" ? (
-            <MindmapView notes={notes} onNodeClick={handleNodeClick} />
+          {activeNote ? (
+            <EditorView 
+              key={activeNote.id} 
+              initialContent={activeNote.content} 
+              onChange={updateNoteContent} 
+            />
           ) : (
-            activeNote ? (
-              <EditorView 
-                key={activeNote.id} 
-                initialContent={activeNote.content} 
-                onChange={updateNoteContent} 
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-600">
-                Створіть нову нотатку або виберіть існуючу на панелі зліва.
-              </div>
-            )
+            <div className="h-full flex items-center justify-center text-gray-600">
+              Створіть нову нотатку або виберіть існуючу на панелі зліва.
+            </div>
           )}
         </div>
       </div>
