@@ -92,6 +92,23 @@ export default function ObsidianClone() {
     }));
   };
 
+  const generateMockNotes = () => {
+    const newNotes: Note[] = [];
+    const topics = ["React", "Next.js", "TypeScript", "TailwindCSS", "Node.js", "GraphQL", "Zustand", "Redux", "Vercel", "WebSockets"];
+    
+    for (let i = 0; i < 30; i++) {
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+      newNotes.push({
+        id: `mock-${Date.now()}-${i}`,
+        title: `Нотатка про ${randomTopic} #${i + 1}`,
+        content: `# ${randomTopic} #${i + 1}\n\nЦе тестова нотатка, згенерована автоматично для перевірки відображення графа (Mindmap).\n\n- Тестовий пункт 1\n- Тестовий пункт 2`,
+        updatedAt: Date.now() - Math.floor(Math.random() * 10000000),
+      });
+    }
+    
+    setNotes([...newNotes, ...notes]);
+  };
+
   const filteredNotes = notes.filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
@@ -162,6 +179,9 @@ export default function ObsidianClone() {
           {/* Sidebar Footer */}
           <div className="p-3 border-t border-[#333333] flex items-center justify-between text-gray-500">
             <button className="p-1 hover:text-white transition-colors"><Settings size={16} /></button>
+            <button onClick={generateMockNotes} className="text-xs text-gray-400 hover:text-white px-2 py-1 border border-[#333333] rounded bg-[#2a2d2e] transition-colors">
+              +30 Тест-Нотаток
+            </button>
           </div>
         </div>
       )}
