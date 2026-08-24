@@ -9,30 +9,33 @@ import "@blocknote/core/fonts/inter.css";
 type EditorViewProps = {
   initialContent: string;
   onChange: (markdown: string) => void;
+  className?: string;
 };
 
-export default function EditorView({ initialContent, onChange }: EditorViewProps) {
+export default function EditorView({ initialContent, onChange, className = "max-w-3xl mx-auto w-full h-full p-8 md:p-12" }: EditorViewProps) {
   // Creates a new editor instance.
   const [editor, setEditor] = useState<BlockNoteEditor | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadInitialHTML() {
       const e = BlockNoteEditor.create();
       if (initialContent) {
         const blocks = await e.tryParseMarkdownToBlocks(initialContent);
         e.replaceBlocks(e.document, blocks);
       }
-      setEditor(e);
+      if (isMounted) setEditor(e);
     }
     loadInitialHTML();
-  }, [initialContent]);
+    return () => { isMounted = false; };
+  }, []);
 
   if (!editor) {
     return <div className="h-full flex items-center justify-center text-gray-500">Завантаження редактора...</div>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto w-full h-full p-8 md:p-12">
+    <div className={className}>
       <BlockNoteView
         editor={editor}
         theme="dark"

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import MindmapView from "@/components/MindmapView";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import EditorView from "@/components/EditorView";
 
 type Note = {
   id: string;
@@ -15,6 +16,7 @@ type Note = {
 export default function GraphPage() {
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedNotes = localStorage.getItem("obsidian_notes");
@@ -22,6 +24,31 @@ export default function GraphPage() {
       setNotes(JSON.parse(savedNotes));
     }
   }, []);
+
+  const handleUpdateNote = (newContent: string) => {
+    if (!selectedNoteId) return;
+    
+    setNotes(currentNotes => {
+      const updatedNotes = currentNotes.map(n => {
+        if (n.id === selectedNoteId) {
+          // Extrapolate title
+          const firstLine = newContent.split('\n')[0];
+          let title = n.title;
+          if (firstLine.startsWith('# ')) {
+            title = firstLine.replace('# ', '').trim();
+          } else if (firstLine.trim().length > 0) {
+            title = firstLine.substring(0, 30) + (firstLine.length > 30 ? '...' : '');
+          } else {
+            title = "Без назви";
+          }
+          return { ...n, content: newContent, title, updatedAt: Date.now() };
+        }
+        return n;
+      });
+      localStorage.setItem("obsidian_notes", JSON.stringify(updatedNotes));
+      return updatedNotes;
+    });
+  };
 
   const generateMockNotes = () => {
     const newNotes: Note[] = [];
@@ -61,8 +88,6 @@ export default function GraphPage() {
     localStorage.setItem("obsidian_notes", JSON.stringify(updatedNotes));
   };
 
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-
   const selectedNote = notes.find(n => n.id === selectedNoteId);
 
   return (
@@ -98,7 +123,7 @@ export default function GraphPage() {
 
          {/* Side Panel for Note Preview */}
          {selectedNote && (
-           <div className="w-96 bg-[#252526] border-l border-[#333333] flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 animate-in slide-in-from-right-8 duration-300">
+           <div className="w-[500px] bg-[#252526] border-l border-[#333333] flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 animate-in slide-in-from-right-8 duration-300">
              <div className="p-4 border-b border-[#333333] flex justify-between items-center bg-[#1e1e1e]">
                <h3 className="font-bold text-white truncate pr-4">{selectedNote.title}</h3>
                <button 
@@ -108,18 +133,13 @@ export default function GraphPage() {
                  ✕
                </button>
              </div>
-             <div className="p-6 overflow-y-auto flex-1 prose prose-invert prose-sm max-w-none">
-               <div style={{ whiteSpace: "pre-wrap" }}>
-                 {selectedNote.content || "Ця нотатка порожня."}
-               </div>
-             </div>
-             <div className="p-4 border-t border-[#333333] bg-[#1e1e1e]">
-               <button 
-                 onClick={() => router.push(`/?noteId=${selectedNote.id}`)}
-                 className="w-full bg-[#333333] hover:bg-[#444444] text-white py-2 rounded text-sm font-medium transition-colors"
-               >
-                 Редагувати нотатку
-               </button>
+             <div className="flex-1 bg-[#1e1e1e] overflow-hidden">
+               <EditorView 
+                 key={selectedNote.id} 
+                 initialContent={selectedNote.content} 
+                 onChange={handleUpdateNote}
+                 className="w-full h-full p-6 overflow-y-auto"
+               />
              </div>
            </div>
          )}
