@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -50,6 +50,10 @@ export default function MindmapView({ notes, onNodeClick }: MindmapViewProps) {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes, setNodes]);
 
   return (
     <div className="w-full h-full" style={{ background: '#1e1e1e' }}>
