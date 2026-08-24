@@ -1,69 +1,180 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { FileText, Plus, Search, Settings, PanelLeftClose, PanelLeft, FolderClosed } from "lucide-react";
+
+type Note = {
+  id: string;
+  title: string;
+  content: string;
+  updatedAt: number;
+};
+
+export default function ObsidianClone() {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Load notes from LocalStorage on mount
+  useEffect(() => {
+    const savedNotes = localStorage.getItem("obsidian_notes");
+    if (savedNotes) {
+      const parsedNotes = JSON.parse(savedNotes);
+      setNotes(parsedNotes);
+      if (parsedNotes.length > 0) {
+        setActiveNoteId(parsedNotes[0].id);
+      }
+    } else {
+      // Initialize with a welcome note
+      const welcomeNote = {
+        id: Date.now().toString(),
+        title: "Ласкаво просимо до вашого нового Obsidian Clone!",
+        content: "# Привіт!\nЦе ваш локальний застосунок для нотаток. Всі дані зберігаються прямо у вашому браузері.\n\n## Що можна зробити:\n- Створювати нові нотатки за допомогою кнопки `+`.\n- Редагувати цей текст (він підтримує Markdown!).\n- Шукати нотатки на боковій панелі.",
+        updatedAt: Date.now(),
+      };
+      setNotes([welcomeNote]);
+      setActiveNoteId(welcomeNote.id);
+    }
+  }, []);
+
+  // Save notes to LocalStorage whenever they change
+  useEffect(() => {
+    if (notes.length > 0) {
+      localStorage.setItem("obsidian_notes", JSON.stringify(notes));
+    }
+  }, [notes]);
+
+  const activeNote = notes.find((n) => n.id === activeNoteId);
+
+  const createNote = () => {
+    const newNote: Note = {
+      id: Date.now().toString(),
+      title: "Без назви",
+      content: "",
+      updatedAt: Date.now(),
+    };
+    setNotes([newNote, ...notes]);
+    setActiveNoteId(newNote.id);
+  };
+
+  const updateNoteContent = (content: string) => {
+    if (!activeNoteId) return;
+    setNotes(notes.map((note) => {
+      if (note.id === activeNoteId) {
+        // Simple heuristic to extract title from the first line if it's a heading
+        const firstLine = content.split('\n')[0];
+        let title = note.title;
+        if (firstLine.startsWith('# ')) {
+          title = firstLine.replace('# ', '').trim();
+        } else if (firstLine.trim().length > 0) {
+          title = firstLine.substring(0, 30) + (firstLine.length > 30 ? '...' : '');
+        } else {
+          title = "Без назви";
+        }
+        
+        return { ...note, content, title, updatedAt: Date.now() };
+      }
+      return note;
+    }));
+  };
+
+  const filteredNotes = notes.filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex h-screen bg-[#1e1e1e] text-[#cccccc] font-sans overflow-hidden">
+      
+      {/* Sidebar */}
+      {isSidebarOpen && (
+        <div className="w-64 bg-[#252526] border-r border-[#333333] flex flex-col shrink-0 flex-none transition-all duration-300">
+          
+          {/* Sidebar Header / Actions */}
+          <div className="flex items-center justify-between p-3 border-b border-[#333333]">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-300">
+              <FolderClosed size={16} className="text-gray-400" />
+              Obsidian Clone
+            </div>
+            <div className="flex gap-1">
+              <button onClick={createNote} className="p-1 hover:bg-[#333333] rounded text-gray-400 hover:text-white transition-colors" title="Нова нотатка">
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="p-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-2.5 text-gray-500" />
+              <input 
+                type="text" 
+                placeholder="Пошук..." 
+                className="w-full bg-[#1e1e1e] border border-[#333333] rounded text-sm py-1.5 pl-8 pr-3 text-gray-300 focus:outline-none focus:border-[#4d4d4d] placeholder-gray-600 transition-colors"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* File Explorer */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-0.5">
+            {filteredNotes.map(note => (
+              <button
+                key={note.id}
+                onClick={() => setActiveNoteId(note.id)}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left truncate transition-colors ${
+                  activeNoteId === note.id ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300'
+                }`}
+              >
+                <FileText size={14} className="shrink-0" />
+                <span className="truncate">{note.title}</span>
+              </button>
+            ))}
+            {filteredNotes.length === 0 && (
+              <div className="text-center text-xs text-gray-600 mt-4">Немає нотаток</div>
+            )}
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="p-3 border-t border-[#333333] flex items-center justify-between text-gray-500">
+            <button className="p-1 hover:text-white transition-colors"><Settings size={16} /></button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
+        {/* Editor Top Bar */}
+        <div className="h-10 flex items-center px-4 border-b border-[#333333] shrink-0">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            className="text-gray-500 hover:text-gray-300 transition-colors mr-4"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+          </button>
+          <div className="text-sm font-medium text-gray-400 truncate">
+            {activeNote ? activeNote.title : "Виберіть нотатку"}
+          </div>
         </div>
-      </main>
+
+        {/* Editor Area */}
+        <div className="flex-1 overflow-y-auto">
+          {activeNote ? (
+            <div className="max-w-3xl mx-auto w-full h-full p-8 md:p-12">
+              <textarea
+                value={activeNote.content}
+                onChange={(e) => updateNoteContent(e.target.value)}
+                className="w-full h-full bg-transparent text-gray-200 resize-none outline-none leading-relaxed text-lg font-mono placeholder-gray-700"
+                placeholder="Почніть писати..."
+                spellCheck={false}
+              />
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-600">
+              Створіть нову нотатку або виберіть існуючу на панелі зліва.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
