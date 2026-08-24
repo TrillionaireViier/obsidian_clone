@@ -110,13 +110,26 @@ export default function ObsidianClone() {
             </div>
           </div>
 
+          {/* Sidebar Features */}
+          <div className="p-2 border-b border-[#333333]">
+            <button
+              onClick={() => setViewMode("graph")}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left transition-colors ${
+                viewMode === "graph" ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:bg-[#2a2d2e] hover:text-gray-300'
+              }`}
+            >
+              <Network size={14} className="shrink-0" />
+              <span>Мапа зв'язків (Mindmap)</span>
+            </button>
+          </div>
+
           {/* Search */}
           <div className="p-3">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-2.5 text-gray-500" />
               <input 
                 type="text" 
-                placeholder="Пошук..." 
+                placeholder="Пошук нотаток..." 
                 className="w-full bg-[#1e1e1e] border border-[#333333] rounded text-sm py-1.5 pl-8 pr-3 text-gray-300 focus:outline-none focus:border-[#4d4d4d] placeholder-gray-600 transition-colors"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -126,6 +139,7 @@ export default function ObsidianClone() {
 
           {/* File Explorer */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-0.5">
+            <div className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2 mt-1">Всі нотатки</div>
             {filteredNotes.map(note => (
               <button
                 key={note.id}
@@ -153,7 +167,7 @@ export default function ObsidianClone() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
         {/* Editor Top Bar */}
-        <div className="h-12 flex items-center justify-between px-4 border-b border-[#333333] shrink-0 bg-[#1e1e1e] z-10">
+        <div className="h-12 flex items-center px-4 border-b border-[#333333] shrink-0 bg-[#1e1e1e] z-10">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
@@ -164,15 +178,6 @@ export default function ObsidianClone() {
             <div className="text-sm font-medium text-gray-400 truncate">
               {viewMode === "editor" ? (activeNote ? activeNote.title : "Виберіть нотатку") : "Мапа зв'язків (Mindmap)"}
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setViewMode(viewMode === "editor" ? "graph" : "editor")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${viewMode === 'graph' ? 'bg-[#333333] text-white' : 'bg-transparent text-gray-400 hover:text-white'}`}
-            >
-              {viewMode === "editor" ? <Network size={16} /> : <FileText size={16} />}
-              {viewMode === "editor" ? "Граф" : "Редактор"}
-            </button>
           </div>
         </div>
 
