@@ -117,7 +117,6 @@ export default function MindmapView({ notes, onNodeClick }: MindmapViewProps) {
         fitView
       >
         <Controls />
-        <MiniMap nodeStrokeColor="#555" nodeColor="#222" maskColor="rgba(0,0,0,0.8)" />
         <Background color="#333" gap={20} size={1.5} />
       </ReactFlow>
     </div>
